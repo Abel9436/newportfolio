@@ -7,7 +7,7 @@ export function Toolkit() {
     <section id="toolkit" data-stage="skills" className="frame relative z-[2] py-28 md:py-40">
       <div className="cols gap-y-16">
         <div className="col-span-4 md:col-start-3">
-          <SectionLabel index="05" title="Toolkit" />
+          <SectionLabel index="06" title="Toolkit" />
           <Kinetic as="h2" className="display mt-8 max-w-[20ch] text-[clamp(2rem,4vw,4.4rem)] leading-[1.06]">
             Python first, for almost everything.
           </Kinetic>

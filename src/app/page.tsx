@@ -3,6 +3,7 @@ import { Contact } from "@/components/sections/Contact";
 import { Experience } from "@/components/sections/Experience";
 import { Hero } from "@/components/sections/Hero";
 import { Marquee } from "@/components/sections/Marquee";
+import { Testimonials } from "@/components/sections/Testimonials";
 import { Toolkit } from "@/components/sections/Toolkit";
 import { Training } from "@/components/sections/Training";
 import { Work } from "@/components/sections/Work";
@@ -35,6 +36,7 @@ export default function Home() {
               <About />
               <Marquee />
               <Work />
+              <Testimonials />
               <Experience />
               <Training />
               <Toolkit />

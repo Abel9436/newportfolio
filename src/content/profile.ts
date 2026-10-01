@@ -33,6 +33,8 @@ export type Project = {
   tags: string[];
   href?: string;
   hrefLabel?: string;
+  /** a short line of client praise shown on the slide */
+  praise?: string;
 };
 
 export const projects: Project[] = [
@@ -63,6 +65,7 @@ export const projects: Project[] = [
     tags: ["Next.js", "Django"],
     href: "https://skillneta.com/",
     hrefLabel: "Visit",
+    praise: "5-star client review",
   },
   {
     title: "Transit Delays",
@@ -218,6 +221,25 @@ export const training: Session[] = [
       "already working remotely with teams abroad",
       "one message away",
     ],
+  },
+];
+
+// Client words, kept as they said them; only grammar is tidied.
+export type Testimonial = { quote: string; name: string; role: string; project: string; rating?: number };
+
+export const testimonials: Testimonial[] = [
+  {
+    quote: "Delivered my project on time.",
+    name: "Mr. Amit",
+    role: "Client",
+    project: "Skillneta, multi-tenant course platform",
+    rating: 5,
+  },
+  {
+    quote: "Fast and good.",
+    name: "Dr. Shakur",
+    role: "Hospital client",
+    project: "AI call center automation",
   },
 ];
 

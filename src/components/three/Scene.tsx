@@ -53,7 +53,9 @@ export default function Scene({ theme }: { theme: Theme }) {
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[1]">
+      {/* R3F re-enables pointer events on its container; the scene has nothing to click, so turn them off */}
       <Canvas
+        style={{ pointerEvents: "none" }}
         dpr={[1, 1.75]}
         gl={{
           antialias: false,

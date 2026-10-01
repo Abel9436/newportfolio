@@ -5,15 +5,30 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TextPlugin } from "gsap/TextPlugin";
 import { useEffect, useRef, useState } from "react";
-import { training } from "@/content/profile";
+import { profile, projects, training } from "@/content/profile";
 import { useIntro } from "../providers/Intro";
 import { useReach } from "../providers/Reach";
+import { useTheme } from "../providers/Theme";
 import { Kinetic, Rise } from "../ui/Kinetic";
 import { SectionLabel } from "../ui/SectionLabel";
 
 gsap.registerPlugin(TextPlugin);
 
 const HOLD_S = 3.2;
+const MAX_LOG = 8;
+
+type Entry = { cmd: string; out: string[] };
+
+const HELP = [
+  "whoami           who I am",
+  "ls               what I've built",
+  "rlhf             also: swe-bench, terminal-bench, long-horizon, langgraph",
+  "hire             start a message to me",
+  "theme            flip dark and light",
+  "resume           open my CV",
+  "selam            say hello in Amharic",
+  "clear            wipe the screen",
+];
 
 export function Training() {
   const root = useRef<HTMLElement>(null);
@@ -30,9 +45,82 @@ export function Training() {
   const pick = (i: number) => {
     setTyped(null);
     setDeclined(false);
+    setManual(false);
     setActive(i);
   };
   const accept = () => openContact({ topic: "A role", message: "Hi Abel, your terminal said you're open to work. " });
+
+  // ---- the part you can type into -------------------------------------------------
+  const { toggle } = useTheme();
+  const [manual, setManual] = useState(false);
+  const [log, setLog] = useState<Entry[]>([]);
+  const [draft, setDraft] = useState("");
+  const history = useRef<string[]>([]);
+  const cursor = useRef(0);
+  const input = useRef<HTMLInputElement>(null);
+  const screen = useRef<HTMLDivElement>(null);
+
+  const run = (raw: string): string[] | null => {
+    const cmd = raw.trim().toLowerCase();
+    if (!cmd) return [];
+    if (cmd === "clear") return null;
+    if (cmd === "help" || cmd === "?") return HELP;
+    if (cmd === "whoami")
+      return ["Abel Bekele", "AI engineer, automation expert, AI trainer", "5+ years of Python", "Ethiopia, GMT+3"];
+    if (cmd === "ls" || cmd === "projects")
+      return projects.map((p) => `${p.title.toLowerCase().replace(/\s+/g, "-").padEnd(17)}${p.kind.toLowerCase()}`);
+    const area = training.find(
+      (t) =>
+        t.id !== "hire" &&
+        (t.id === cmd || t.name.toLowerCase() === cmd || (cmd === "langchain" && t.id === "langgraph")),
+    );
+    if (area) return area.lines;
+    if (["hire", "contact", "email", "hire abel"].includes(cmd)) {
+      window.setTimeout(
+        () => openContact({ topic: "A role", message: "Hi Abel, I found you through your terminal. " }),
+        700,
+      );
+      return ["opening the contact form..."];
+    }
+    if (cmd === "theme") {
+      toggle();
+      return ["switching the lights"];
+    }
+    if (cmd === "resume" || cmd === "cv") {
+      window.open(profile.resume, "_blank");
+      return ["opening resume.pdf"];
+    }
+    if (["selam", "hello", "hi", "hey"].includes(cmd))
+      return ["ሰላም! (selam, that's hello in Amharic)", "type hire if you'd like to talk"];
+    if (cmd.startsWith("sudo")) return ["nice try. no root needed, just type hire"];
+    return [`command not found: ${raw.trim()}`, "try help"];
+  };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = draft;
+    setDraft("");
+    if (raw.trim()) history.current.push(raw.trim());
+    cursor.current = history.current.length;
+    setManual(true);
+    const out = run(raw);
+    if (out === null) return setLog([]);
+    setLog((l) => [...l, { cmd: raw.trim(), out }].slice(-MAX_LOG));
+  };
+
+  const recall = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const h = history.current;
+    if (!h.length || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+    e.preventDefault();
+    cursor.current = Math.max(0, Math.min(h.length, cursor.current + (e.key === "ArrowUp" ? -1 : 1)));
+    setDraft(h[cursor.current] ?? "");
+  };
+
+  // keep the newest output in view
+  useEffect(() => {
+    const el = screen.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [log]);
 
   // The last tab ends on a real question; y or Enter answers it from the keyboard.
   useEffect(() => {
@@ -63,7 +151,7 @@ export function Training() {
   // Types the session out, holds it, then moves to the next one.
   useGSAP(
     () => {
-      if (!inView) return;
+      if (!inView || manual) return;
       const lines = gsap.utils.toArray<HTMLElement>("[data-type]");
       gsap.set(lines, { text: "" });
       gsap.set("[data-out]", { autoAlpha: 0 });
@@ -93,14 +181,14 @@ export function Training() {
         });
       });
     },
-    { dependencies: [active, inView], scope: root, revertOnUpdate: true },
+    { dependencies: [active, inView, manual], scope: root, revertOnUpdate: true },
   );
 
   return (
     <section ref={root} id="training" data-stage="training" className="frame relative z-[2] py-28 md:py-40">
       <div className="cols">
         <div className="col-span-4">
-          <SectionLabel index="04" title="AI training" />
+          <SectionLabel index="05" title="AI training" />
           <Kinetic as="h2" className="display mt-8 text-[clamp(2.1rem,4.6vw,5rem)] leading-[1.06]">
             I train the models,
             <br />
@@ -108,7 +196,8 @@ export function Training() {
           </Kinetic>
           <Rise as="p" className="mt-8 max-w-[44ch] text-[18px] leading-relaxed text-muted md:text-[20px]">
             RLHF, SWE-Bench and Terminal-Bench style tasks, long-horizon agent work, and LangChain or LangGraph when
-            it&apos;s time to ship something real.
+            it&apos;s time to ship something real. The terminal below is real, too: type{" "}
+            <span className="font-mono text-fg">help</span>.
           </Rise>
         </div>
       </div>
@@ -151,51 +240,91 @@ export function Training() {
                 <span className="size-2.5 rounded-full border border-faint" />
                 <span className="size-2.5 rounded-full bg-fg" />
               </span>
-              <span className="label truncate text-muted">abel@training: ~/{session.id}</span>
+              <span className="label truncate text-muted">abel@training: ~/{manual ? "" : session.id}</span>
             </div>
 
             <div
-              key={session.id}
-              className="min-h-[300px] p-5 font-mono text-[14px] leading-[1.9] md:p-8 md:text-[16px]"
+              ref={screen}
+              data-lenis-prevent
+              data-cursor="Type"
+              onClick={() => input.current?.focus({ preventScroll: true })}
+              className="max-h-[440px] min-h-[320px] overflow-y-auto p-5 font-mono text-[14px] leading-[1.9] md:p-8 md:text-[16px]"
             >
-              <p className="text-muted"># {session.note}</p>
-              <p className="mt-4">
-                <span className="text-muted">$ </span>
-                <span data-type data-text={session.prompt}>
-                  {session.prompt}
-                </span>
-              </p>
-              {session.lines.map((line) => (
-                <p key={line} data-out className="whitespace-pre-wrap text-fg/85">
-                  <span className="text-muted">&gt; </span>
-                  <span data-type data-text={line}>
-                    {line}
-                  </span>
-                </p>
-              ))}
-              {asking && (
-                <div className="mt-3">
-                  <p>
-                    <span className="text-muted">? </span>send a message?{" "}
-                    <button onClick={accept} className="rounded bg-fg px-1.5 text-bg hover:opacity-80">
-                      Y
-                    </button>
-                    <span className="text-muted"> / </span>
-                    <button onClick={() => setDeclined(true)} className="text-muted underline-offset-4 hover:underline">
-                      n
-                    </button>
+              {manual ? (
+                log.map((entry, i) => (
+                  <div key={i} className="mb-3">
+                    <p>
+                      <span className="text-muted">$ </span>
+                      {entry.cmd}
+                    </p>
+                    {entry.out.map((line, j) => (
+                      <p key={j} className="whitespace-pre-wrap text-fg/85">
+                        <span className="text-muted">&gt; </span>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                ))
+              ) : (
+                <div key={session.id}>
+                  <p className="text-muted"># {session.note}</p>
+                  <p className="mt-4">
+                    <span className="text-muted">$ </span>
+                    <span data-type data-text={session.prompt}>
+                      {session.prompt}
+                    </span>
                   </p>
-                  <p className="text-muted">
-                    {declined
-                      ? "> no worries. the form is at the bottom whenever you're ready"
-                      : "> press y, or click it"}
-                  </p>
+                  {session.lines.map((line) => (
+                    <p key={line} data-out className="whitespace-pre-wrap text-fg/85">
+                      <span className="text-muted">&gt; </span>
+                      <span data-type data-text={line}>
+                        {line}
+                      </span>
+                    </p>
+                  ))}
+                  {asking && (
+                    <div className="mt-3">
+                      <p>
+                        <span className="text-muted">? </span>send a message?{" "}
+                        <button onClick={accept} className="rounded bg-fg px-1.5 text-bg hover:opacity-80">
+                          Y
+                        </button>
+                        <span className="text-muted"> / </span>
+                        <button
+                          onClick={() => setDeclined(true)}
+                          className="text-muted underline-offset-4 hover:underline"
+                        >
+                          n
+                        </button>
+                      </p>
+                      <p className="text-muted">
+                        {declined
+                          ? "> no worries. the form is at the bottom whenever you're ready"
+                          : "> press y, or click it"}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
-              <span
-                aria-hidden
-                className="mt-2 inline-block h-[1.1em] w-[0.6em] translate-y-[3px] bg-fg [animation:pulse-dot_1s_steps(1)_infinite]"
-              />
+
+              <form onSubmit={submit} className="mt-4 flex items-center gap-2 border-t border-line pt-4">
+                <label htmlFor="terminal-input" className="text-muted">
+                  $
+                </label>
+                <input
+                  id="terminal-input"
+                  ref={input}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={recall}
+                  placeholder="type help and press enter"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  aria-label="Terminal command"
+                  className="min-w-0 flex-1 bg-transparent text-fg caret-fg outline-none placeholder:text-faint focus-visible:outline-none"
+                />
+              </form>
             </div>
           </div>
         </Rise>

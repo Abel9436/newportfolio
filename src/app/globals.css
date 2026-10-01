@@ -83,7 +83,7 @@ body {
 
   /* three voices: .display for every title, Geist for reading, .label for small print */
   .display {
-    font-family: var(--font-michroma), sans-serif;
+    font-family: var(--font-michroma), var(--font-ethiopic), sans-serif;
     letter-spacing: -0.02em;
     line-height: 0.9;
   }
@@ -99,6 +99,10 @@ body {
     .label {
       font-size: 12.5px;
     }
+  }
+
+  .geez {
+    font-family: var(--font-ethiopic), sans-serif;
   }
 
   .outline-text {
@@ -153,9 +157,12 @@ body {
   50% { opacity: 0.25; }
 }
 
-:focus-visible {
-  outline: 1px solid var(--fg);
-  outline-offset: 4px;
+/* in the base layer so a component can opt out with a utility */
+@layer base {
+  :focus-visible {
+    outline: 1px solid var(--fg);
+    outline-offset: 4px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

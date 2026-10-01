@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { disciplines, profile } from "@/content/profile";
 import { useIntro } from "../providers/Intro";
 import { useReach } from "../providers/Reach";
+import { stage } from "../three/stage";
 import { Kinetic } from "../ui/Kinetic";
 
 gsap.registerPlugin(ScrambleTextPlugin);
@@ -60,12 +61,15 @@ export function Hero() {
   useGSAP(
     () => {
       if (!ready) return;
+      const chars = gsap.utils.toArray<HTMLElement>("[data-hero-char]");
+
       gsap
         .timeline({ delay: 0.15 })
         .from("[data-hero-block]", { scaleY: 0, duration: 1.1, ease: "expo.inOut" }, 0)
-        .from("[data-hero-char]", { yPercent: 105, duration: 1.4, ease: "expo.out", stagger: 0.05 }, 0.25)
+        .from(chars, { yPercent: 105, duration: 1.4, ease: "expo.out", stagger: 0.05 }, 0.25)
         .from("[data-hero-meta]", { autoAlpha: 0, y: 14, duration: 0.9, ease: "power3.out", stagger: 0.06 }, 0.6)
-        .from("[data-hero-rule]", { scaleX: 0, duration: 1.4, ease: "expo.inOut" }, 0.4);
+        .from("[data-hero-rule]", { scaleX: 0, duration: 1.4, ease: "expo.inOut" }, 0.4)
+        .from("[data-geez]", { autoAlpha: 0, yPercent: 30, duration: 1.2, ease: "expo.out" }, 0.9);
 
       const leave = { trigger: root.current, start: "top top", end: "bottom top", scrub: true };
       gsap.to("[data-hero-first]", { xPercent: -10, ease: "none", scrollTrigger: leave });
@@ -74,8 +78,39 @@ export function Hero() {
     { dependencies: [ready], scope: root },
   );
 
+  // Drag anywhere in the hero to spin the figure; a flick keeps him turning.
+  const last = useRef({ x: 0, t: 0 });
+  const onDown = (e: React.PointerEvent) => {
+    if ((e.target as Element).closest("a, button")) return;
+    stage.drag.active = true;
+    stage.drag.velocity = 0;
+    last.current = { x: e.clientX, t: performance.now() };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!stage.drag.active) return;
+    const now = performance.now();
+    const turn = (e.clientX - last.current.x) * 0.009;
+    const dt = Math.max((now - last.current.t) / 1000, 1 / 120);
+    stage.drag.yaw += turn;
+    stage.drag.velocity = turn / dt;
+    last.current = { x: e.clientX, t: now };
+  };
+  const onUp = () => {
+    stage.drag.active = false;
+  };
+
   return (
-    <section ref={root} id="top" data-stage="hero" className="frame relative h-svh min-h-[560px]">
+    <section
+      ref={root}
+      id="top"
+      data-stage="hero"
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+      className="frame relative h-svh min-h-[560px] cursor-grab touch-pan-y select-none active:cursor-grabbing"
+    >
       {/* the name sits behind the figure */}
       <h1
         aria-label={profile.name}
@@ -91,16 +126,30 @@ export function Hero() {
           </span>
           <Letters word="BEL" />
         </span>
+        {/* keeps the two halves apart for search engines: "ABEL BEKELE", not "ABELBEKELE" */}
+        <span className="sr-only"> </span>
         <span data-hero-last className="mt-[4vw] block text-right text-[15.5vw] md:mt-[1vw] md:text-[12vw]">
           <Letters word="BEKELE" />
         </span>
       </h1>
 
+      {/* the name in Ge'ez, running down the left edge */}
+      <p
+        data-geez
+        lang="am"
+        className="geez pointer-events-none absolute left-[calc(var(--gutter)/2)] top-1/2 z-[2] hidden -translate-x-1/2 -translate-y-1/2 text-[14px] tracking-[0.3em] text-muted [writing-mode:vertical-rl] md:block"
+      >
+        አቤል በቀለ
+      </p>
+
       <div className="cols relative z-[2] pt-20 md:pt-24">
         <p data-hero-meta className="label col-span-2 text-muted md:col-span-1">
           <RoleTicker />
           <br />
-          Ethiopia
+          Ethiopia{" "}
+          <span lang="am" className="geez normal-case tracking-normal">
+            · ኢትዮጵያ
+          </span>
         </p>
         <div data-hero-meta className="col-span-2 flex justify-end md:col-span-1 md:col-start-6">
           <button
@@ -109,7 +158,7 @@ export function Hero() {
           >
             <span className="mt-[4px] size-1.5 rounded-full bg-fg [animation:pulse-dot_2s_ease-in-out_infinite]" />
             <span className="link-line">Open to work</span>
-            <span className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+            <span className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
               &#8599;
             </span>
           </button>

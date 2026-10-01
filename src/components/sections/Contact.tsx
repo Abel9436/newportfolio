@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { useLenis } from "lenis/react";
 import { useRef } from "react";
 import { profile } from "@/content/profile";
+import { useReach } from "../providers/Reach";
 import { ContactForm } from "../ui/ContactForm";
 import { Kinetic, Rise } from "../ui/Kinetic";
 import { Magnetic } from "../ui/Magnetic";
@@ -14,6 +15,7 @@ import { SectionLabel } from "../ui/SectionLabel";
 export function Contact() {
   const lenis = useLenis();
   const root = useRef<HTMLElement>(null);
+  const { openContact } = useReach();
 
   // The name rises out of the bottom edge as the page runs out.
   useGSAP(
@@ -27,6 +29,30 @@ export function Contact() {
           scrollTrigger: { trigger: "[data-wordmark-frame]", start: "top bottom", end: "max", scrub: true },
         },
       );
+
+      // Letters near the pointer rise and stretch toward it, like keys being lifted.
+      const frame = root.current?.querySelector<HTMLElement>("[data-wordmark-frame]");
+      if (!frame || !window.matchMedia("(pointer: fine)").matches) return;
+      const letters = gsap.utils.toArray<HTMLElement>("[data-wm-char]");
+      const lift = letters.map((el) => gsap.quickTo(el, "y", { duration: 0.5, ease: "power3" }));
+      const stretch = letters.map((el) => gsap.quickTo(el, "scaleY", { duration: 0.5, ease: "power3" }));
+      gsap.set(letters, { transformOrigin: "50% 100%" });
+
+      const move = (e: PointerEvent) => {
+        letters.forEach((el, i) => {
+          const r = el.getBoundingClientRect();
+          const reach = Math.max(0, 1 - Math.abs(e.clientX - (r.left + r.width / 2)) / (r.height * 1.6));
+          lift[i](-reach * r.height * 0.18);
+          stretch[i](1 + reach * 0.22);
+        });
+      };
+      const rest = () => letters.forEach((_, i) => (lift[i](0), stretch[i](1)));
+      frame.addEventListener("pointermove", move);
+      frame.addEventListener("pointerleave", rest);
+      return () => {
+        frame.removeEventListener("pointermove", move);
+        frame.removeEventListener("pointerleave", rest);
+      };
     },
     { scope: root },
   );
@@ -35,7 +61,7 @@ export function Contact() {
     <section ref={root} id="contact" data-stage="contact" className="frame relative overflow-hidden pt-28 md:pt-36">
       <div className="cols relative z-[2]">
         <div className="col-span-4 md:col-span-2">
-          <SectionLabel index="06" title="Contact" />
+          <SectionLabel index="07" title="Contact" />
         </div>
       </div>
 
@@ -111,13 +137,20 @@ export function Contact() {
         </div>
       </footer>
 
+      {/* the sign-off: hover lifts the letters, a click opens the form (the same form as above) */}
       <div
         data-wordmark-frame
+        data-cursor="Say hi"
         aria-hidden
-        className="pointer-events-none relative z-0 select-none overflow-hidden pb-[1vw]"
+        onClick={() => openContact()}
+        className="relative z-0 cursor-pointer select-none overflow-hidden pb-[1vw] pt-[3vw]"
       >
         <p data-wordmark className="display whitespace-nowrap text-center text-[8.6vw] leading-[0.9] text-fg">
-          ABEL BEKELE
+          {"ABEL BEKELE".split("").map((c, i) => (
+            <span key={i} data-wm-char className="inline-block">
+              {c === " " ? "\u00a0" : c}
+            </span>
+          ))}
         </p>
       </div>
     </section>

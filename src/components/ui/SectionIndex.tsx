@@ -10,6 +10,7 @@ const ORDER = [
   { id: "top", label: "Intro" },
   { id: "profile", label: "Profile" },
   { id: "work", label: "Work" },
+  { id: "words", label: "Kind words" },
   { id: "experience", label: "Experience" },
   { id: "training", label: "AI training" },
   { id: "toolkit", label: "Toolkit" },

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Michroma } from "next/font/google";
+import { Geist, Geist_Mono, Michroma, Noto_Sans_Ethiopic } from "next/font/google";
 import { themeScript } from "@/components/providers/theme-script";
 import "./globals.css";
 
@@ -7,6 +7,12 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+// Ge'ez script, for the Amharic touches; also the fallback when titles scramble through Ethiopic letters.
+const ethiopic = Noto_Sans_Ethiopic({
+  variable: "--font-ethiopic",
+  subsets: ["ethiopic"],
+  weight: ["400", "600"],
 });
 const michroma = Michroma({
   variable: "--font-michroma",
@@ -35,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} ${michroma.variable} antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${michroma.variable} ${ethiopic.variable} antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

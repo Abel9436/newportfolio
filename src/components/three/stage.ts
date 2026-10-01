@@ -30,6 +30,10 @@ export const POSES: Record<string, PoseSet> = {
     desktop: { x: 0.22, y: -0.03, s: 0.86, r: -0.35, o: 1 },
     mobile: { x: 0.2, y: 0.26, s: 0.44, r: -0.35, o: 1 },
   },
+  words: {
+    desktop: { x: -0.32, y: -0.04, s: 0.84, r: 0.6, o: 1 },
+    mobile: { x: 0.2, y: 0.1, s: 0.62, r: 0.5, o: 0.2 },
+  },
   experience: {
     desktop: { x: 0.3, y: -0.05, s: 0.8, r: -0.75, o: 1 },
     mobile: { x: 0.2, y: 0.1, s: 0.62, r: -0.75, o: 0.22 },
@@ -57,6 +61,8 @@ export const stage = {
   pointer: { x: 0, y: 0 },
   /** current figure opacity, written by the character, read by the slice pass */
   opacity: 1,
+  /** hand-spin from dragging the figure in the hero */
+  drag: { active: false, yaw: 0, velocity: 0 },
   /** set true once the preloader has cleared */
   revealed: false,
 };

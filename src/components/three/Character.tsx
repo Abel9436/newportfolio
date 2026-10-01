@@ -135,13 +135,24 @@ export function Character({ theme }: { theme: Theme }) {
     const x = pose.x * vp.width;
     const y = pose.y * vp.height - lag * vp.height * 0.35 + Math.sin(t * 0.8) * 0.012 * vp.height;
     const s = pose.s * vp.height * (1 - lag * 0.15);
-    const yaw = pose.r + stage.spin + stage.pointer.x * 0.22 + Math.sin(t * 0.35) * 0.05 - lag * 1.4;
+    // A flick keeps him turning; once it dies down he eases back to the nearest full turn,
+    // so every section still finds him facing the way its pose expects.
+    const drag = stage.drag;
+    if (!drag.active) {
+      drag.yaw += drag.velocity * dt;
+      drag.velocity = THREE.MathUtils.damp(drag.velocity, 0, 2.2, dt);
+      if (Math.abs(drag.velocity) < 0.3) {
+        const home = Math.round(drag.yaw / (Math.PI * 2)) * Math.PI * 2;
+        drag.yaw = THREE.MathUtils.damp(drag.yaw, home, 1.4, dt);
+      }
+    }
+    const yaw = pose.r + stage.spin + drag.yaw + stage.pointer.x * 0.22 + Math.sin(t * 0.35) * 0.05 - lag * 1.4;
 
     g.position.x = THREE.MathUtils.damp(g.position.x, x, 3.2, dt);
     g.position.y = THREE.MathUtils.damp(g.position.y, y, 3.2, dt);
     const next = THREE.MathUtils.damp(g.scale.x, s, 3.2, dt);
     g.scale.setScalar(next);
-    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, yaw, 3, dt);
+    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, yaw, drag.active ? 14 : 3, dt);
     stage.opacity = THREE.MathUtils.damp(stage.opacity, pose.o, 3, dt);
     g.rotation.x = THREE.MathUtils.damp(g.rotation.x, -stage.pointer.y * 0.06, 3, dt);
 

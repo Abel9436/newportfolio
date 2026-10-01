@@ -63,7 +63,7 @@ export function Experience() {
     <section ref={root} id="experience" data-stage="experience" className="frame relative z-[2] py-28 md:py-40">
       <div className="cols">
         <div className="col-span-4">
-          <SectionLabel index="03" title="Experience" />
+          <SectionLabel index="04" title="Experience" />
           <p className="label mt-8 text-muted">What I do</p>
           <ul className="mt-4" onMouseLeave={() => setPicked(null)}>
             {disciplines.map((d, i) => (

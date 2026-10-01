@@ -107,6 +107,12 @@ export function Work() {
                     <span>{p.kind}</span>
                     <span>/</span>
                     <span>{p.period}</span>
+                    {p.praise && (
+                      <>
+                        <span>/</span>
+                        <span className="text-fg">&#9733; {p.praise}</span>
+                      </>
+                    )}
                   </p>
                   <h3
                     data-k
